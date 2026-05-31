@@ -40,34 +40,12 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>Genre *</label>
-                <select v-model="form.genre" required>
-                  <option value="">Pilih genre</option>
-                  <option>Action</option>
-                  <option>Adventure</option>
-                  <option>Animation</option>
-                  <option>Comedy</option>
-                  <option>Crime</option>
-                  <option>Documentary</option>
-                  <option>Drama</option>
-                  <option>Fantasy</option>
-                  <option>Horror</option>
-                  <option>Mystery</option>
-                  <option>Romance</option>
-                  <option>Sci-Fi</option>
-                  <option>Thriller</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row two-col">
-              <div class="form-group">
                 <label>Platform *</label>
                 <select v-model="form.platform" required>
                   <option value="">Pilih platform</option>
                   <option>Netflix</option>
                   <option>Disney+</option>
-                  <option>Amazon Prime</option>
+                  <option>Viu</option>
                   <option>Apple TV+</option>
                   <option>HBO Max</option>
                   <option>Hulu</option>
@@ -76,6 +54,21 @@
                   <option>Lainnya</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Genre Checkbox -->
+            <div class="form-group">
+              <label>Genre * <span class="genre-hint">(pilih 1 atau lebih)</span></label>
+              <div class="genre-grid">
+                <label v-for="g in genreOptions" :key="g" class="genre-check">
+                  <input type="checkbox" :value="g" v-model="selectedGenres" />
+                  {{ g }}
+                </label>
+              </div>
+              <p v-if="genreError" class="error-msg">Pilih minimal 1 genre.</p>
+            </div>
+
+            <div class="form-row two-col">
               <div class="form-group">
                 <label>Status</label>
                 <select v-model="form.status">
@@ -84,13 +77,13 @@
                   <option value="Sudah Ditonton">Sudah Ditonton</option>
                 </select>
               </div>
-            </div>
-
-            <div class="form-row two-col">
               <div class="form-group">
                 <label>Rating (1–10)</label>
                 <input v-model.number="form.rating" type="number" min="1" max="10" placeholder="Opsional" />
               </div>
+            </div>
+
+            <div class="form-row">
               <div class="form-group">
                 <label>URL Poster</label>
                 <input v-model="form.poster_url" type="url" placeholder="https://..." @input="updatePreview" />
@@ -122,16 +115,23 @@ import api from '../api'
 
 const router = useRouter()
 
+const genreOptions = [
+  'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
+  'Documentary', 'Drama', 'Fantasy', 'Horror', 'Mystery',
+  'Romance', 'Youth','Sci-Fi', 'Thriller', 'Fight'
+]
+
 const form = ref({
   title: '',
   type: 'Film',
-  genre: '',
   platform: '',
   status: 'Belum Ditonton',
   rating: '',
   poster_url: '',
 })
 
+const selectedGenres = ref([])
+const genreError = ref(false)
 const previewUrl = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -148,9 +148,17 @@ function showToast(message, type = 'success') {
 
 async function handleSubmit() {
   error.value = ''
+  genreError.value = false
+
+  if (selectedGenres.value.length === 0) {
+    genreError.value = true
+    return
+  }
+
   loading.value = true
   try {
     const payload = { ...form.value }
+    payload.genre = selectedGenres.value.join(',')
     if (!payload.rating) delete payload.rating
     if (!payload.poster_url) delete payload.poster_url
 
@@ -169,15 +177,6 @@ async function handleSubmit() {
 .main-content { padding: 40px 24px; }
 .form-page { max-width: 900px; margin: 0 auto; }
 
-.back-btn {
-  color: var(--muted);
-  font-size: 0.88rem;
-  display: inline-block;
-  margin-bottom: 16px;
-  transition: color 0.2s;
-}
-.back-btn:hover { color: var(--accent); }
-
 .page-title { font-family: var(--font-display); font-size: 2.2rem; letter-spacing: 2px; }
 .page-title span { color: var(--accent); }
 .page-sub { color: var(--muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 32px; }
@@ -188,7 +187,6 @@ async function handleSubmit() {
   .form-layout { grid-template-columns: 1fr; }
 }
 
-/* Poster preview */
 .preview-side { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .poster-preview {
   width: 100%;
@@ -213,7 +211,6 @@ async function handleSubmit() {
 .preview-placeholder span { font-size: 2.5rem; }
 .preview-hint { font-size: 0.78rem; color: var(--muted); text-align: center; }
 
-/* Form */
 .film-form { display: flex; flex-direction: column; gap: 18px; }
 .form-row { display: flex; flex-direction: column; gap: 18px; }
 .two-col { flex-direction: row; gap: 16px; }
@@ -221,6 +218,37 @@ async function handleSubmit() {
 
 @media (max-width: 500px) {
   .two-col { flex-direction: column; }
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+}
+
+.genre-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.genre-check input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+}
+
+.genre-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: normal;
 }
 
 .error-msg { color: var(--red); font-size: 0.87rem; }

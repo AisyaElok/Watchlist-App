@@ -4,7 +4,7 @@
       <RouterLink to="/watchlist" class="logo">LOKIIE<span> PICKS</span></RouterLink>
       <div class="nav-links">
         <RouterLink to="/watchlist" class="nav-link">Beranda</RouterLink>
-        <RouterLink to="/tambah" class="nav-link">+ Tambah Film</RouterLink>
+        <RouterLink to="/tambah" class="nav-link">+ Tambah</RouterLink>
       </div>
       <div class="nav-actions">
         <span class="welcome">Halo, {{ auth.user?.name }} 👋</span>

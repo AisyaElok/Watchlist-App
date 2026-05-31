@@ -215,6 +215,7 @@ onMounted(fetchFilms)
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-right: 60px;
 }
 .film-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; display: flex; gap: 4px; }
 .dot { color: var(--border); }
