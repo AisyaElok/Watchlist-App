@@ -1,56 +1,11 @@
-# 🎬 CineList — Watchlist App
+# CineList — Watchlist App
 
-Aplikasi web untuk menyimpan daftar film dan series yang ingin ditonton. Dibuat dengan **Node.js + Express** (backend), **Vue 3** (frontend), dan **MySQL** (database).
-
----
-
-## 📁 Struktur Project
-
-```
-watchlist-app/
-├── backend/
-│   ├── src/
-│   │   ├── config/database.js   ← koneksi MySQL
-│   │   ├── middleware/auth.js   ← middleware JWT
-│   │   ├── routes/
-│   │   │   ├── auth.js          ← register & login
-│   │   │   └── films.js         ← CRUD film
-│   │   └── index.js             ← entry point Express
-│   ├── database.sql             ← script buat tabel
-│   ├── .env.example
-│   └── package.json
-└── frontend/
-    ├── src/
-    │   ├── views/
-    │   │   ├── LoginView.vue
-    │   │   ├── RegisterView.vue
-    │   │   ├── WatchlistView.vue   ← halaman daftar
-    │   │   └── TambahFilmView.vue  ← halaman tambah
-    │   ├── components/Navbar.vue
-    │   ├── stores/auth.js           ← Pinia auth store
-    │   ├── router/index.js
-    │   ├── api.js                   ← axios instance
-    │   └── assets/style.css
-    ├── .env.example
-    └── package.json
-```
+Aplikasi web untuk menyimpan daftar film dan series yang ingin ditonton. Dibuat dengan Node.js + Express (backend), Vue 3 (frontend), dan Firebase Realtime Database (database).
 
 ---
 
-## ⚙️ API Endpoints
 
-| Method | Endpoint | Auth | Keterangan |
-|--------|----------|------|------------|
-| POST | `/api/auth/register` | ❌ | Daftar akun baru |
-| POST | `/api/auth/login` | ❌ | Login, dapat JWT |
-| GET | `/api/films` | ✅ JWT | Ambil semua film user |
-| POST | `/api/films` | ✅ JWT | Tambah film baru |
-| GET | `/api/films/:id` | ✅ JWT | Detail satu film |
-| DELETE | `/api/films/:id` | ✅ JWT | Hapus film |
-
----
-
-## 🚀 Cara Menjalankan Lokal (Laragon)
+## Cara Menjalankan Lokal (Laragon)
 
 ### 1. Siapkan Database
 
@@ -96,7 +51,7 @@ Frontend berjalan di: `http://localhost:5173`
 
 ---
 
-## 🌐 Hosting
+## Hosting
 
 ### Backend → Railway
 
@@ -130,7 +85,7 @@ Frontend berjalan di: `http://localhost:5173`
 
 ---
 
-## 🔐 Cara Kerja Auth
+## Cara Kerja Auth
 
 1. User **register** → password di-hash pakai `bcryptjs`
 2. User **login** → server validasi password, kirim **JWT token**
@@ -143,7 +98,7 @@ Frontend berjalan di: `http://localhost:5173`
 
 ---
 
-## 📝 Contoh Request API (untuk laporan)
+## Contoh Request API (untuk laporan)
 
 ### Register
 ```json
