@@ -8,9 +8,7 @@ const filmRoutes = require('./routes/films');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:5173', 'https://lokiie-picks.vercel.app', 'https://lokiie-picks-git-main-aisya-elok-s-projects.vercel.app']
-}))
+app.use(cors());
 app.use(express.json());
 
 // Routes
