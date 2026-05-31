@@ -1,14 +1,12 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+const admin = require('firebase-admin')
+const serviceAccount = require('../../serviceAccountKey.json')
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'watchlist_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://watchlistapp-lokiie-default-rtdb.asia-southeast1.firebasedatabase.app'
+  })
+}
 
-module.exports = pool;
+const db = admin.database()
+module.exports = db

@@ -1,127 +1,109 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../config/database');
-const authMiddleware = require('../middleware/auth');
+const express = require('express')
+const router = express.Router()
+const db = require('../config/database')
+const authMiddleware = require('../middleware/auth')
 
-// Semua route di sini butuh login (JWT)
-router.use(authMiddleware);
+// GET /api/films/all — semua film semua user (admin)
+router.get('/all', async (req, res) => {
+  try {
+    const filmsSnap = await db.ref('films').once('value')
+    const usersSnap = await db.ref('users').once('value')
+    const users = {}
+    usersSnap.forEach(u => { users[u.key] = u.val() })
+    const films = []
+    filmsSnap.forEach(child => {
+      const f = child.val()
+      films.push({
+        id: child.key, ...f,
+        user_name: users[f.user_id]?.name || '-',
+        user_email: users[f.user_id]?.email || '-'
+      })
+    })
+    films.sort((a, b) => b.created_at - a.created_at)
+    res.json({ data: films })
+  } catch (err) {
+    res.status(500).json({ message: 'Gagal mengambil data.' })
+  }
+})
 
-// GET /api/films — ambil semua film milik user yang login
+router.use(authMiddleware)
+
+// GET /api/films
 router.get('/', async (req, res) => {
   try {
-    const [films] = await db.query(
-      'SELECT * FROM films WHERE user_id = ? ORDER BY created_at DESC',
-      [req.user.id]
-    );
-    res.json({ data: films });
+    const snapshot = await db.ref('films').orderByChild('user_id').equalTo(req.user.id).once('value')
+    const films = []
+    snapshot.forEach(child => { films.push({ id: child.key, ...child.val() }) })
+    films.sort((a, b) => b.created_at - a.created_at)
+    res.json({ data: films })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Gagal mengambil data film.' });
+    res.status(500).json({ message: 'Gagal mengambil data film.' })
   }
-});
+})
 
-// GET /api/films/:id — detail satu film
+// GET /api/films/:id
 router.get('/:id', async (req, res) => {
   try {
-    const [films] = await db.query(
-      'SELECT * FROM films WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
-    );
-    if (films.length === 0) {
-      return res.status(404).json({ message: 'Film tidak ditemukan.' });
+    const snapshot = await db.ref(`films/${req.params.id}`).once('value')
+    if (!snapshot.exists() || snapshot.val().user_id !== req.user.id) {
+      return res.status(404).json({ message: 'Film tidak ditemukan.' })
     }
-    res.json({ data: films[0] });
+    res.json({ data: { id: snapshot.key, ...snapshot.val() } })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Gagal mengambil data film.' });
+    res.status(500).json({ message: 'Gagal mengambil data film.' })
   }
-});
+})
 
-// POST /api/films — tambah film baru
+// POST /api/films
 router.post('/', async (req, res) => {
-  const { title, genre, platform, type, status, poster_url, rating } = req.body;
-
+  const { title, genre, platform, type, status, poster_url, rating } = req.body
   if (!title || !genre || !platform || !type) {
-    return res.status(400).json({ message: 'Field title, genre, platform, dan type wajib diisi.' });
+    return res.status(400).json({ message: 'Field title, genre, platform, dan type wajib diisi.' })
   }
-
-  const validTypes = ['Film', 'Series'];
-  const validStatuses = ['Belum Ditonton', 'Sedang Ditonton', 'Sudah Ditonton'];
-
-  if (!validTypes.includes(type)) {
-    return res.status(400).json({ message: 'Type harus Film atau Series.' });
-  }
-  if (status && !validStatuses.includes(status)) {
-    return res.status(400).json({ message: 'Status tidak valid.' });
-  }
-  if (rating && (rating < 1 || rating > 10)) {
-    return res.status(400).json({ message: 'Rating harus antara 1-10.' });
-  }
-
   try {
-    const [result] = await db.query(
-      `INSERT INTO films (user_id, title, genre, platform, type, status, poster_url, rating)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        req.user.id,
-        title,
-        genre,
-        platform,
-        type,
-        status || 'Belum Ditonton',
-        poster_url || null,
-        rating || null,
-      ]
-    );
-
-    const [newFilm] = await db.query('SELECT * FROM films WHERE id = ?', [result.insertId]);
-    res.status(201).json({ message: 'Film berhasil ditambahkan!', data: newFilm[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Gagal menambahkan film.' });
-  }
-});
-
-// PUT /api/films/:id — edit film
-router.put('/:id', async (req, res) => {
-  const { title, genre, platform, type, status, poster_url, rating } = req.body;
-  try {
-    const [films] = await db.query(
-      'SELECT id FROM films WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
-    );
-    if (films.length === 0) {
-      return res.status(404).json({ message: 'Film tidak ditemukan.' });
+    const newFilm = db.ref('films').push()
+    const data = {
+      user_id: req.user.id, title, genre, platform, type,
+      status: status || 'Belum Ditonton',
+      poster_url: poster_url || null,
+      rating: rating || null,
+      created_at: Date.now()
     }
-    await db.query(
-      `UPDATE films SET title=?, genre=?, platform=?, type=?, status=?, poster_url=?, rating=? WHERE id=?`,
-      [title, genre, platform, type, status, poster_url || null, rating || null, req.params.id]
-    );
-    const [updated] = await db.query('SELECT * FROM films WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Film berhasil diupdate!', data: updated[0] });
+    await newFilm.set(data)
+    res.status(201).json({ message: 'Film berhasil ditambahkan!', data: { id: newFilm.key, ...data } })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Gagal mengupdate film.' });
+    res.status(500).json({ message: 'Gagal menambahkan film.' })
   }
-});
+})
 
-// DELETE /api/films/:id — hapus film
+// PUT /api/films/:id
+router.put('/:id', async (req, res) => {
+  const { title, genre, platform, type, status, poster_url, rating } = req.body
+  try {
+    const snapshot = await db.ref(`films/${req.params.id}`).once('value')
+    if (!snapshot.exists() || snapshot.val().user_id !== req.user.id) {
+      return res.status(404).json({ message: 'Film tidak ditemukan.' })
+    }
+    const updated = { title, genre, platform, type, status, poster_url: poster_url || null, rating: rating || null }
+    await db.ref(`films/${req.params.id}`).update(updated)
+    res.json({ message: 'Film berhasil diupdate!', data: { id: req.params.id, ...snapshot.val(), ...updated } })
+  } catch (err) {
+    res.status(500).json({ message: 'Gagal mengupdate film.' })
+  }
+})
+
+// DELETE /api/films/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const [films] = await db.query(
-      'SELECT id FROM films WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
-    );
-    if (films.length === 0) {
-      return res.status(404).json({ message: 'Film tidak ditemukan.' });
+    const snapshot = await db.ref(`films/${req.params.id}`).once('value')
+    if (!snapshot.exists() || snapshot.val().user_id !== req.user.id) {
+      return res.status(404).json({ message: 'Film tidak ditemukan.' })
     }
-
-    await db.query('DELETE FROM films WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Film berhasil dihapus.' });
+    await db.ref(`films/${req.params.id}`).remove()
+    res.json({ message: 'Film berhasil dihapus.' })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Gagal menghapus film.' });
+    res.status(500).json({ message: 'Gagal menghapus film.' })
   }
-});
+})
 
-module.exports = router;
+module.exports = router
