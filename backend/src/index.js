@@ -9,7 +9,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://lokiie-picks.vercel.app']
+  origin: ['http://localhost:5173', 'https://lokiie-picks.vercel.app', 'https://lokiie-picks-git-main-aisya-elok-s-projects.vercel.app']
 }))
 app.use(express.json());
 
